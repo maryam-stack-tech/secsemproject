@@ -1,0 +1,31 @@
+---
+- name: Execute LAMP Setup Script on Slave
+  hosts: Slave  
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - name: Upload the Bash script
+      copy:
+        src: /path/to/setup_lamp.sh
+        dest: /tmp/setup_lamp.sh
+      register: script_result
+
+    - name: Execute the Bash script
+      shell: bash /tmp/setup_lamp.sh
+      ignore_errors: yes
+      when: script_result is changed
+
+    - name: Check if the PHP application is accessible
+      uri:
+        url: https://github.com/laravel/laravel/
+        status_code: 200
+        register: app_result
+      ignore_errors: yes
+      when: script_result is changed
+
+    - name: Create a cron job to check server uptime at 12 am
+      cron:
+        name: "Check Uptime"
+        job: "0 0 * * * uptime > /var/log/uptime.log"
+        user: your_user  
